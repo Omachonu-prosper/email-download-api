@@ -5,6 +5,8 @@ from pymongo import MongoClient
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 from openpyxl import Workbook
+import pandas as pd
+import io
 
 load_dotenv()
 
@@ -25,10 +27,8 @@ client = MongoClient('mongodb://localhost:27017')
 db = client['plaschema']
 passwords = db['passwords']
 
-# Openpyxl instantiation
-wb = Workbook()
 
-@app.route('/retrieve/data')
+@app.route('/request/data')
 def retrieve_data():
     data = passwords.find({}, {"_id": 0}).limit(100)
     data = list(data)
@@ -44,31 +44,26 @@ def retrieve_data():
 
 @app.route('/request/data/mail')
 def request_data_mail():
+    
+    # Openpyxl instantiation
+    # wb = Workbook()
     recipient = 'omachonucodes@gmail.com'
     subject = 'Testing out some code'
     message_body = 'Body of the test message'
 
     data = passwords.find({}, {"_id": 0})
     data = list(data)
-    sheet = wb.active
-    heading = ['rank', 'password']
-    sheet.append(heading)
-
-    for obj in data:
-        row = [
-            obj.get('rank'),
-            obj.get('password')
-        ]
-        sheet.append(row)
-
+    df = pd.DataFrame(data)
+    
     # Save excel file temporarily on the server
     with tempfile.NamedTemporaryFile(delete=False) as tmp:
         filename = tmp.name
-        wb.save(filename)
+        filename = f"{filename}.xlsx"
+        df.to_excel(filename, index=False)
 
     message = Message(subject=subject, recipients=[recipient], body=message_body)
-    with app.open_resource(filename) as fp:
-        message.attach(f"{filename}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fp.read())
+    # with app.open_resource(filename) as fp:
+    message.attach("data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename) 
 
     mail.send(message)
     return jsonify({
