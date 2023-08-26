@@ -6,7 +6,7 @@ et-xmlfile
 Flask
 Flask-Mail
 gunicorn
-itsdangerous=
+itsdangerous
 Jinja2
 MarkupSafe
 numpy
