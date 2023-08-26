@@ -19,3 +19,4 @@ pytz
 six
 tzdata
 Werkzeug
+openpyxl
